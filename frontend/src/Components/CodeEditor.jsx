@@ -28,19 +28,39 @@ const CodeEditor = ({
   const textareaRef = useRef(null);
   const preRef = useRef(null);
   const lineGutterRef = useRef(null);
-  const selectionRef = useRef(null);
+  const selectionRef = useRef({ start: 0, end: 0 });
+
+  const updateSelection = (e) => {
+    const el = e?.target || textareaRef.current;
+    if (el) {
+      selectionRef.current = {
+        start: el.selectionStart,
+        end: el.selectionEnd
+      };
+    }
+  };
 
   // Synchronously restore cursor position immediately after React updates DOM
   useLayoutEffect(() => {
     if (selectionRef.current && textareaRef.current) {
       const { start, end } = selectionRef.current;
-      textareaRef.current.setSelectionRange(start, end);
-      selectionRef.current = null;
+      const len = (value || "").length;
+      const safeStart = Math.min(start, len);
+      const safeEnd = Math.min(end, len);
+      if (
+        textareaRef.current.selectionStart !== safeStart ||
+        textareaRef.current.selectionEnd !== safeEnd
+      ) {
+        textareaRef.current.setSelectionRange(safeStart, safeEnd);
+      }
     }
   }, [value]);
 
   const setCursor = (start, end = start) => {
     selectionRef.current = { start, end };
+    if (textareaRef.current) {
+      textareaRef.current.setSelectionRange(start, end);
+    }
   };
 
   const handleChange = (e) => {
@@ -139,6 +159,10 @@ const CodeEditor = ({
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           onScroll={handleScroll}
+          onSelect={updateSelection}
+          onClick={updateSelection}
+          onKeyUp={updateSelection}
+          onFocus={updateSelection}
           onPaste={onPaste}
           onCopy={onCopy}
           readOnly={readOnly}

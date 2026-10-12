@@ -219,9 +219,10 @@ export const useSecureProctoring = ({
 export const SkillrackSecurityModal = ({
   isFullscreen,
   onEnterFullscreen,
-  environmentName = "Coding Arena"
+  environmentName = "Coding Arena",
+  disabled = false
 }) => {
-  if (!STRICT_FULLSCREEN_LOCKDOWN) return null;
+  if (!STRICT_FULLSCREEN_LOCKDOWN || disabled) return null;
 
   // Initial Fullscreen Gateway (if user hasn't entered fullscreen yet)
   if (!isFullscreen) {

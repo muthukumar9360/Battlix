@@ -62,6 +62,11 @@ const ContestPage = () => {
   const [isWinner, setIsWinner] = useState(false);
   const [winnerName, setWinnerName] = useState("");
   const popupShownRef = useRef(false);
+  const [isExiting, setIsExiting] = useState(false);
+
+  // Synchronous ref to always read latest user code without effect thrashing
+  const codeRef = useRef(code);
+  codeRef.current = code;
 
   const [syncError, setSyncError] = useState(null);
   const [syncTimeout, setSyncTimeout] = useState(false);
@@ -326,18 +331,14 @@ const ContestPage = () => {
     const curProblem = problemsList[safeActiveIndex];
     const curId = curProblem?._id || `prob_${safeActiveIndex}`;
     const sKey = getDraftStorageKey(curId, language);
+    const codeToSave = codeRef.current;
+
+    if (!codeToSave || !codeToSave.trim()) return;
 
     setIsSavingDraft(true);
     // 1. Local storage save (guarantees survival through F5 / refresh)
     try {
-      localStorage.setItem(sKey, code);
-      setCodeMap(prev => ({
-        ...prev,
-        [curId]: {
-          ...(prev[curId] || {}),
-          [language]: code
-        }
-      }));
+      localStorage.setItem(sKey, codeToSave);
     } catch (e) {
       console.warn("Local storage draft write error:", e);
     }
@@ -345,12 +346,12 @@ const ContestPage = () => {
     // 2. Persist to cloud backend
     const token = localStorage.getItem("token");
     const activeContestId = contestId || battle?.roomId || battle?._id;
-    if (token && activeContestId && code) {
+    if (token && activeContestId && codeToSave) {
       axios.post(
         `${API}/api/battles/${activeContestId}/save-draft`,
         {
           problemId: curId,
-          code,
+          code: codeToSave,
           language
         },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -364,17 +365,23 @@ const ContestPage = () => {
     if (explicit) {
       setDebugOutput(prev => prev + `> 💾 [DRAFT PRESERVED] Code saved for Challenge #${safeActiveIndex + 1} (${timeStr})\n`);
     }
-  }, [problemsList, safeActiveIndex, getDraftStorageKey, language, code, contestId, battle?.roomId, battle?._id, API]);
+  }, [problemsList, safeActiveIndex, getDraftStorageKey, language, contestId, battle?.roomId, battle?._id, API]);
 
-  // Initial draft load on problem switch or initial mount
+  const currentProblemId = currentProblem?._id || `prob_${safeActiveIndex}`;
+  const loadedDraftKeyRef = useRef("");
+
+  // Initial draft load on problem switch, language switch, or initial mount ONLY
   useEffect(() => {
-    if (!currentProblem) return;
-    const curId = currentProblem._id || `prob_${safeActiveIndex}`;
-    const initialCode = loadDraftForProblem(curId, language);
-    if (initialCode && initialCode !== code) {
-      setCode(initialCode);
+    if (!currentProblemId) return;
+    const key = `${currentProblemId}_${language}`;
+    if (loadedDraftKeyRef.current !== key) {
+      loadedDraftKeyRef.current = key;
+      const initialCode = loadDraftForProblem(currentProblemId, language);
+      if (initialCode !== undefined && initialCode !== null) {
+        setCode(initialCode);
+      }
     }
-  }, [safeActiveIndex, currentProblem, language]);
+  }, [currentProblemId, language, loadDraftForProblem]);
 
   // Auto-save on page refresh/close (beforeunload)
   useEffect(() => {
@@ -382,23 +389,24 @@ const ContestPage = () => {
       const curProblem = problemsList[safeActiveIndex];
       const curId = curProblem?._id || `prob_${safeActiveIndex}`;
       const sKey = getDraftStorageKey(curId, language);
-      if (code) {
-        localStorage.setItem(sKey, code);
+      const codeToSave = codeRef.current;
+      if (codeToSave) {
+        localStorage.setItem(sKey, codeToSave);
       }
     };
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [problemsList, safeActiveIndex, getDraftStorageKey, language, code]);
+  }, [problemsList, safeActiveIndex, getDraftStorageKey, language]);
 
-  // Periodic background auto-save every 15s
+  // Periodic background auto-save every 15s without clearing on each keystroke
   useEffect(() => {
     const timer = setInterval(() => {
-      if (code && code.trim()) {
+      if (codeRef.current && codeRef.current.trim()) {
         handleSaveDraft(false);
       }
     }, 15000);
     return () => clearInterval(timer);
-  }, [code, handleSaveDraft]);
+  }, [handleSaveDraft]);
 
   // Handle switching between questions
   const handleSwitchProblem = (newIndex) => {
@@ -410,6 +418,8 @@ const ContestPage = () => {
     // Switch to new problem and restore its code
     const nextProblem = problemsList[newIndex];
     const nextId = nextProblem?._id || `prob_${newIndex}`;
+    const nextKey = `${nextId}_${language}`;
+    loadedDraftKeyRef.current = nextKey;
     const nextCode = loadDraftForProblem(nextId, language);
 
     setActiveProblemIndex(newIndex);
@@ -434,6 +444,8 @@ const ContestPage = () => {
     handleSaveDraft(false);
 
     // Load code for new language
+    const nextKey = `${curId}_${newLang}`;
+    loadedDraftKeyRef.current = nextKey;
     const nextCode = loadDraftForProblem(curId, newLang);
     setLanguage(newLang);
     setCode(nextCode);
@@ -490,6 +502,10 @@ const ContestPage = () => {
   const handleExitBattle = useCallback(async (force = false) => {
     // If battle has already concluded, immediately proceed to results
     if (battle?.status === "finished") {
+      setIsExiting(true);
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
       navigate(`/results/${contestId}`, {
         state: { opponentDraftCode }
       });
@@ -504,6 +520,8 @@ const ContestPage = () => {
     ) {
       return;
     }
+
+    setIsExiting(true);
 
     // Instantly notify rival through socket that this player forfeited/exited
     if (socketRef.current) {
@@ -542,6 +560,7 @@ const ContestPage = () => {
   // Squad Consensus Exit Click Handler
   const handleExitClick = () => {
     if (battle?.status === "finished") {
+      setIsExiting(true);
       if (document.fullscreenElement) {
         document.exitFullscreen().catch(() => {});
       }
@@ -615,7 +634,7 @@ const ContestPage = () => {
     triggerViolation
   } = useSecureProctoring({
     onTerminate: handleSecurityTermination,
-    enabled: true,
+    enabled: !isExiting && battle?.status !== "finished",
     environmentName: isRanked ? "Ranked 1v1 Battle" : "Contest Arena"
   });
 
@@ -1113,11 +1132,14 @@ const ContestPage = () => {
       `}</style>
 
       {/* FULLSCREEN GATEWAY */}
-      <FullscreenGatewayModal
-        isFullscreen={isFullscreen}
-        onEnterFullscreen={enterFullscreen}
-        environmentName={isRanked ? "Ranked 1v1 Battle" : "Contest Arena"}
-      />
+      {!isExiting && battle?.status !== "finished" && (
+        <FullscreenGatewayModal
+          isFullscreen={isFullscreen}
+          onEnterFullscreen={enterFullscreen}
+          environmentName={isRanked ? "Ranked 1v1 Battle" : "Contest Arena"}
+          disabled={isExiting || battle?.status === "finished"}
+        />
+      )}
 
       {/* SECURITY BANNER ALERT */}
       {showSecurityAlert && (
@@ -1139,6 +1161,7 @@ const ContestPage = () => {
       <nav className="w-full py-2.5 px-4 sm:px-6 md:px-8 bg-[#0a1118] border-b border-white/20 flex justify-between items-center shrink-0 z-40 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <button
+            id="btn-exit-match"
             onClick={handleExitClick}
             className="flex items-center gap-1.5 text-gray-300 hover:text-red-400 text-xs font-bold uppercase transition bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg border border-white/30 hover:border-white cursor-pointer"
             title={battle?.status === "finished" ? "View Match Results" : "Exit Match"}
@@ -1696,6 +1719,7 @@ const ContestPage = () => {
                 </button>
 
                 <button
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handleSaveDraft(true)}
                   disabled={isSavingDraft}
                   className="px-4 py-2.5 bg-blue-600/20 hover:bg-blue-600/35 text-blue-300 hover:text-white rounded-xl text-xs font-bold font-mono uppercase tracking-wider transition flex items-center gap-2 border border-blue-500/40 hover:border-blue-400 disabled:opacity-50 cursor-pointer shadow-sm"
