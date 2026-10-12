@@ -15,20 +15,25 @@ export const useSecureProctoring = ({
 }) => {
   const isLockdownActive = enabled && STRICT_FULLSCREEN_LOCKDOWN;
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
-  const [hasEnteredFullscreenOnce, setHasEnteredFullscreenOnce] = useState(!isLockdownActive);
+  const hasEnteredFullscreenOnceRef = useRef(Boolean(document.fullscreenElement));
 
   const isTerminatingRef = useRef(false);
   const keystrokeHistoryRef = useRef([]);
+  const onTerminateRef = useRef(onTerminate);
 
-  // Terminate session immediately with zero warning delay
+  useEffect(() => {
+    onTerminateRef.current = onTerminate;
+  }, [onTerminate]);
+
+  // Terminate session for verified integrity violations
   const triggerViolation = useCallback((reason) => {
     if (!isLockdownActive || isTerminatingRef.current) return;
     isTerminatingRef.current = true;
 
-    // Clear clipboard
+    // Clear clipboard safely
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText("");
+        navigator.clipboard.writeText("").catch(() => {});
       }
     } catch (e) {}
 
@@ -37,10 +42,10 @@ export const useSecureProctoring = ({
       document.exitFullscreen().catch(() => {});
     }
 
-    if (onTerminate) {
-      onTerminate(reason);
+    if (onTerminateRef.current) {
+      onTerminateRef.current(reason);
     }
-  }, [isLockdownActive, onTerminate]);
+  }, [isLockdownActive]);
 
   // Request fullscreen wrapper
   const enterFullscreen = useCallback(async () => {
@@ -49,7 +54,7 @@ export const useSecureProctoring = ({
         await document.documentElement.requestFullscreen();
       }
       setIsFullscreen(true);
-      setHasEnteredFullscreenOnce(true);
+      hasEnteredFullscreenOnceRef.current = true;
     } catch (err) {
       console.warn("Fullscreen permission or activation required:", err);
     }
@@ -67,36 +72,29 @@ export const useSecureProctoring = ({
     }
   }, []);
 
-  // Handle Fullscreen state change
+  // Handle Fullscreen state change & proctoring guard listeners
   useEffect(() => {
     if (!isLockdownActive) return;
 
-    // Try auto-fullscreen on mount
-    enterFullscreen();
+    // Try auto-fullscreen on mount if user gesture allows
+    enterFullscreen().catch(() => {});
 
     const handleFullscreenChange = () => {
       const active = Boolean(document.fullscreenElement);
       setIsFullscreen(active);
 
       if (active) {
-        setHasEnteredFullscreenOnce(true);
-      } else if (hasEnteredFullscreenOnce && !isTerminatingRef.current) {
-        // Immediate termination! Zero warning timer, immediate session cancellation & code deletion
-        triggerViolation("Fullscreen mode exited - immediate session termination enforced");
+        hasEnteredFullscreenOnceRef.current = true;
       }
+      // Note: When fullscreen is exited (active === false), do NOT terminate or forfeit the battle.
+      // The FullscreenGatewayModal overlay will display and prompt the user to re-enter fullscreen
+      // without losing code or ending the battle.
     };
 
-    // Tab switch or minimize
+    // Tab switch or minimize notification
     const handleVisibilityChange = () => {
-      if (document.hidden && hasEnteredFullscreenOnce && !isTerminatingRef.current) {
-        triggerViolation("Tab switched or browser minimized during active session");
-      }
-    };
-
-    // Window Blur (clicking outside, secondary monitor, snipping tool)
-    const handleWindowBlur = () => {
-      if (hasEnteredFullscreenOnce && !isTerminatingRef.current) {
-        triggerViolation("Window lost focus or unauthorized application opened");
+      if (document.hidden && hasEnteredFullscreenOnceRef.current && !isTerminatingRef.current) {
+        console.warn("Visibility change detected during active session");
       }
     };
 
@@ -131,7 +129,7 @@ export const useSecureProctoring = ({
         e.preventDefault();
         try {
           if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText("");
+            navigator.clipboard.writeText("").catch(() => {});
           }
         } catch (err) {}
         triggerViolation("Screenshot capture attempted (PrintScreen detected)");
@@ -167,7 +165,7 @@ export const useSecureProctoring = ({
         e.preventDefault();
         try {
           if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText("");
+            navigator.clipboard.writeText("").catch(() => {});
           }
         } catch (err) {}
         return;
@@ -186,7 +184,7 @@ export const useSecureProctoring = ({
       e.preventDefault();
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText("");
+          navigator.clipboard.writeText("").catch(() => {});
         }
       } catch (err) {}
     };
@@ -196,7 +194,7 @@ export const useSecureProctoring = ({
       e.preventDefault();
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText("");
+          navigator.clipboard.writeText("").catch(() => {});
         }
       } catch (err) {}
     };
@@ -214,7 +212,6 @@ export const useSecureProctoring = ({
 
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("blur", handleWindowBlur);
     window.addEventListener("keydown", handleKeyDown, true);
     document.addEventListener("copy", handleCopy, true);
     document.addEventListener("cut", handleCut, true);
@@ -222,24 +219,19 @@ export const useSecureProctoring = ({
     document.addEventListener("contextmenu", handleContextMenu, true);
 
     return () => {
-      // Automatically exit fullscreen and return to normal mode upon unmounting/exiting
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {});
-      }
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("blur", handleWindowBlur);
       window.removeEventListener("keydown", handleKeyDown, true);
       document.removeEventListener("copy", handleCopy, true);
       document.removeEventListener("cut", handleCut, true);
       document.removeEventListener("paste", handlePaste, true);
       document.removeEventListener("contextmenu", handleContextMenu, true);
     };
-  }, [isLockdownActive, hasEnteredFullscreenOnce, enterFullscreen, triggerViolation]);
+  }, [isLockdownActive, enterFullscreen, triggerViolation]);
 
   return {
     isFullscreen,
-    hasEnteredFullscreenOnce,
+    hasEnteredFullscreenOnce: hasEnteredFullscreenOnceRef.current,
     enterFullscreen,
     exitFullscreen,
     triggerViolation
@@ -287,9 +279,9 @@ export const SkillrackSecurityModal = ({
               <FaBan className="text-red-400 mt-0.5 shrink-0" />
               <span>Copy, Paste, Cut, and dev-tools shortcuts are prohibited.</span>
             </div>
-            <div className="flex items-start gap-2 text-[11px] text-red-400 font-bold">
-              <FaExclamationTriangle className="text-red-400 mt-0.5 shrink-0" />
-              <span>Exiting fullscreen immediately terminates your session and deletes your saved code. Only 1 attempt is allowed.</span>
+            <div className="flex items-start gap-2 text-[11px] text-amber-400 font-bold">
+              <FaExclamationTriangle className="text-amber-400 mt-0.5 shrink-0" />
+              <span>Fullscreen mode must remain active while coding. Click below to enter fullscreen and continue.</span>
             </div>
           </div>
 

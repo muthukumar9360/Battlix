@@ -19,6 +19,57 @@ const Home = () => {
   const [rankedModalOpen, setRankedModalOpen] = useState(false);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [userData, setUserData] = useState(null);
+  const [clipboardModalOpen, setClipboardModalOpen] = useState(false);
+
+  // Automatically request clipboard/proctoring access immediately when Home page opens
+  useEffect(() => {
+    const checkClipboardPermission = async () => {
+      const alreadyHandled = localStorage.getItem("battlix_clipboard_access_granted");
+      if (alreadyHandled === "true") return;
+
+      // 1. Check browser permission query if supported
+      if (navigator.permissions && navigator.permissions.query) {
+        try {
+          const status = await navigator.permissions.query({ name: "clipboard-read" });
+          if (status.state === "granted") {
+            localStorage.setItem("battlix_clipboard_access_granted", "true");
+            return;
+          }
+        } catch (e) {}
+      }
+
+      // 2. Try requesting directly on open
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          await navigator.clipboard.readText();
+          localStorage.setItem("battlix_clipboard_access_granted", "true");
+          return;
+        }
+      } catch (err) {
+        // Browser requires interactive user gesture to show the permission dialog
+      }
+
+      // 3. Immediately show interactive access prompt on home page
+      setClipboardModalOpen(true);
+    };
+
+    checkClipboardPermission();
+  }, []);
+
+  const handleGrantClipboardAccess = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        await navigator.clipboard.readText();
+      } else if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText("");
+      }
+    } catch (err) {
+      console.warn("Clipboard permission request completed:", err);
+    } finally {
+      localStorage.setItem("battlix_clipboard_access_granted", "true");
+      setClipboardModalOpen(false);
+    }
+  };
 
   const user = localStorage.getItem("username");
   const API = import.meta.env.VITE_API_URL;
@@ -275,6 +326,47 @@ const Home = () => {
         currentUsername={user || "Combatant"}
         rankedBattleXp={userData?.rankedBattleXp || 0}
       />
+
+      {/* INITIAL CLIPBOARD & ANTI-CHEAT ACCESS MODAL (IMMEDIATE REQUEST ON OPEN) */}
+      {clipboardModalOpen && (
+        <div className="fixed inset-0 z-[9999] bg-[#03070b]/90 backdrop-blur-md flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
+          <div className="max-w-md w-full bg-[#0a1118] border-2 border-orange-500/80 rounded-3xl p-6 sm:p-8 text-center shadow-[0_0_50px_rgba(249,115,22,0.35)] animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 rounded-2xl bg-orange-500/20 border-2 border-orange-500 flex items-center justify-center text-orange-400 text-3xl mx-auto mb-4 shadow-[0_0_20px_rgba(249,115,22,0.4)]">
+              <FaShieldAlt />
+            </div>
+
+            <div className="inline-block px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 font-mono text-[10px] font-bold uppercase tracking-widest mb-3">
+              Proctoring & Anti-Cheat Access
+            </div>
+
+            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white mb-2">
+              Allow Clipboard Access
+            </h2>
+
+            <p className="text-xs text-gray-300 font-mono leading-relaxed mb-6">
+              To prevent accidental match termination and enable arena anti-cheat proctoring, please allow copy &amp; paste access now so your active coding battles are never interrupted.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleGrantClipboardAccess}
+                className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-black font-mono text-sm uppercase tracking-wider rounded-xl transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+              >
+                <FaShieldAlt /> Allow Access Now
+              </button>
+              <button
+                onClick={() => {
+                  localStorage.setItem("battlix_clipboard_access_granted", "dismissed");
+                  setClipboardModalOpen(false);
+                }}
+                className="text-xs font-mono text-gray-400 hover:text-white transition py-1 cursor-pointer"
+              >
+                Remind Me Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
