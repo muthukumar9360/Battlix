@@ -2,8 +2,6 @@
 
 <div align="center">
 
-![BATTLIX Logo](./frontend/public/logo.jpg)
-
 **The ultimate multiplayer coding battleground featuring real-time 1v1 duels, automated contest arenas, strict proctoring lockdown, and live execution telemetry.**
 
 [![Frontend Build](https://img.shields.io/badge/Frontend-Netlify-00C7B7?style=for-the-badge&logo=netlify&logoColor=white)](https://battlix.netlify.app)
