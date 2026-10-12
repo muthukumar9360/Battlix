@@ -162,8 +162,9 @@ Code_Game/
 │   ├── vite.config.js       # Vite build configuration
 │   └── package.json
 ├── deploy.ps1               # Controlled deployment script (syncs to 'deploy' branch)
-├── start-servers.ps1        # One-click local development server launcher
-├── stop-servers.ps1         # Cleanup script to terminate background server processes
+├── deploy.bat               # Windows batch shortcut for deploy.ps1
+├── start-dev.ps1            # PowerShell launcher for local development servers
+├── start-dev.bat            # Windows batch launcher for local development servers
 ├── netlify.toml             # Netlify frontend build & redirect rules
 ├── render.yaml              # Render backend service specification
 └── package.json             # Root package manager & concurrently scripts
@@ -238,7 +239,11 @@ VITE_API_URL=https://battlix-backend.onrender.com
      ```
    - **Using Windows PowerShell launcher:**
      ```powershell
-     .\start-servers.ps1
+     .\start-dev.ps1
+     ```
+   - **Using Windows Batch launcher:**
+     ```cmd
+     start-dev.bat
      ```
 
 6. **Access the application:**
