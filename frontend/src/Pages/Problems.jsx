@@ -71,7 +71,7 @@ const Problems = () => {
   const pageSize = 10;
 
   const navigate = useNavigate();
-  const API = import.meta.env.VITE_API_URL;
+  const API = import.meta.env.VITE_API_URL || "https://battlic-backend.onrender.com";
 
   useEffect(() => {
     fetchProblemsAndCategories();

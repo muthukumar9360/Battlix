@@ -11,7 +11,7 @@ const JoinRoom = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const API = import.meta.env.VITE_API_URL;
+  const API = import.meta.env.VITE_API_URL || "https://battlic-backend.onrender.com";
 
   React.useEffect(() => {
     const token = localStorage.getItem("token");

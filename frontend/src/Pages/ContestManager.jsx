@@ -27,7 +27,7 @@ import BackButton from "../Components/BackButton.jsx";
 
 const ContestManager = () => {
   const navigate = useNavigate();
-  const API = import.meta.env.VITE_API_URL;
+  const API = import.meta.env.VITE_API_URL || "https://battlic-backend.onrender.com";
 
   const [contests, setContests] = useState([]);
   const [loading, setLoading] = useState(true);

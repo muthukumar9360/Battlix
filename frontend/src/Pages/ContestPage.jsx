@@ -85,7 +85,7 @@ const ContestPage = () => {
   const safeActiveIndex = Math.min(activeProblemIndex, Math.max(0, problemsList.length - 1));
   const currentProblem = problemsList[safeActiveIndex] || battle?.problem || null;
 
-  const API = import.meta.env.VITE_API_URL;
+  const API = import.meta.env.VITE_API_URL || "https://battlic-backend.onrender.com";
   const myUsername = (location.state?.username || localStorage.getItem("username") || "Combatant").trim();
 
   // Find my participant object

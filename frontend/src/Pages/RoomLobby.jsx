@@ -40,7 +40,7 @@ const RoomLobby = () => {
   const [actionLoading, setActionLoading] = useState({});
 
   const socketRef = useRef(null);
-  const API = import.meta.env.VITE_API_URL;
+  const API = import.meta.env.VITE_API_URL || "https://battlic-backend.onrender.com";
   const activeRoomId = battle?.roomId || urlRoomId;
 
   // Capacity calculation based on battleType and battle configuration

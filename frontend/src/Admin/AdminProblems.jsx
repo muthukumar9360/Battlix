@@ -37,7 +37,7 @@ const AdminProblems = () => {
   const [editHint2, setEditHint2] = useState("");
   const [editHint3, setEditHint3] = useState("");
 
-  const API = import.meta.env.VITE_API_URL;
+  const API = import.meta.env.VITE_API_URL || "https://battlic-backend.onrender.com";
   const adminToken = localStorage.getItem("adminToken");
 
   useEffect(() => {

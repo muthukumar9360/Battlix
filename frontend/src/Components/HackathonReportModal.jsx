@@ -16,7 +16,7 @@ const HackathonReportModal = ({ battleId, isOpen, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const API = import.meta.env.VITE_API_URL;
+  const API = import.meta.env.VITE_API_URL || "https://battlic-backend.onrender.com";
 
   useEffect(() => {
     if (!isOpen || !battleId) return;
