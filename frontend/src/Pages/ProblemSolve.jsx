@@ -191,7 +191,7 @@ const ProblemSolve = () => {
     triggerViolation
   } = useSecureProctoring({
     onTerminate: handleSecurityTermination,
-    enabled: true,
+    enabled: !isSolved,
     environmentName: "Practice Arena"
   });
 
@@ -431,6 +431,9 @@ const ProblemSolve = () => {
 
       if (data.allPassed) {
         setIsSolved(true);
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        }
         setAcceptedSolution({
           code,
           language,
@@ -511,11 +514,14 @@ const ProblemSolve = () => {
       `}</style>
 
       {/* FULLSCREEN GATEWAY */}
-      <FullscreenGatewayModal
-        isFullscreen={isFullscreen}
-        onEnterFullscreen={enterFullscreen}
-        environmentName="Practice Arena"
-      />
+      {!isSolved && (
+        <FullscreenGatewayModal
+          isFullscreen={isFullscreen}
+          onEnterFullscreen={enterFullscreen}
+          environmentName="Practice Arena"
+          disabled={isSolved}
+        />
+      )}
 
       {/* TOP NAV */}
       <nav className="w-full py-2.5 px-4 mt-3 sm:px-6 md:px-8 bg-[#0a1118] border-b border-white/20 flex justify-between items-center shrink-0 z-40">

@@ -167,9 +167,18 @@ const DailyBlitz = () => {
     triggerViolation
   } = useSecureProctoring({
     onTerminate: handleSecurityTermination,
-    enabled: true,
+    enabled: !isAlreadySolved && !showVictoryModal,
     environmentName: "Daily Blitz Challenge"
   });
+
+  // Automatically turn off fullscreen when victory modal displays
+  useEffect(() => {
+    if (showVictoryModal || isAlreadySolved) {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+  }, [showVictoryModal, isAlreadySolved]);
 
   const handlePasteBlocked = (e) => {
     e.preventDefault();
@@ -308,6 +317,9 @@ const DailyBlitz = () => {
       if (res.data?.success) {
         setIsAlreadySolved(true);
         setVictoryStats(res.data);
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        }
         setShowVictoryModal(true);
         setDebugOutput(
           (prev) =>
@@ -357,11 +369,14 @@ const DailyBlitz = () => {
       `}</style>
 
       {/* FULLSCREEN GATEWAY */}
-      <FullscreenGatewayModal
-        isFullscreen={isFullscreen}
-        onEnterFullscreen={enterFullscreen}
-        environmentName="Daily Blitz Challenge"
-      />
+      {!isAlreadySolved && !showVictoryModal && (
+        <FullscreenGatewayModal
+          isFullscreen={isFullscreen}
+          onEnterFullscreen={enterFullscreen}
+          environmentName="Daily Blitz Challenge"
+          disabled={isAlreadySolved || showVictoryModal}
+        />
+      )}
 
       {/* BACKGROUND ACCENTS */}
       <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-yellow-500/10 blur-[150px] rounded-full pointer-events-none"></div>

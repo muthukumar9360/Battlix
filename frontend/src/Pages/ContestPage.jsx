@@ -634,9 +634,18 @@ const ContestPage = () => {
     triggerViolation
   } = useSecureProctoring({
     onTerminate: handleSecurityTermination,
-    enabled: !isExiting && battle?.status !== "finished",
+    enabled: !isExiting && battle?.status !== "finished" && !showResultPopup,
     environmentName: isRanked ? "Ranked 1v1 Battle" : "Contest Arena"
   });
+
+  // Automatically turn off fullscreen when match result or telemetry arrives
+  useEffect(() => {
+    if (showResultPopup || battle?.status === "finished") {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+  }, [showResultPopup, battle?.status]);
 
   // Anti-Copy & Anti-Paste Enforcement (Blocks clipboard actions safely without ending battle)
   const handlePasteBlocked = (e) => {
@@ -738,6 +747,9 @@ const ContestPage = () => {
         const isMeWinner = currentWinner === myUsername || isMyTeamWin;
         setIsWinner(isMeWinner);
         setWinnerName(currentWinner || (isMyTeamWin ? `Team ${myTeam}` : "A Combatant"));
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        }
         setShowResultPopup(true);
       }
     });
@@ -853,6 +865,9 @@ const ContestPage = () => {
             const isMeWinner = me?.result === "win" || (!me?.result && winnerPart?.user === myUsername);
             setIsWinner(isMeWinner);
             setWinnerName(winnerPart?.user?.username || winnerPart?.username || winnerPart?.user || myUsername);
+            if (document.fullscreenElement) {
+              document.exitFullscreen().catch(() => {});
+            }
             setShowResultPopup(true);
           }
         }
@@ -1013,6 +1028,9 @@ const ContestPage = () => {
         );
         setIsWinner(isMyTeamWin || res.data?.winner === myUsername);
         setWinnerName(res.data?.winner || (isMyTeamWin ? `Team ${myTeam}` : myUsername));
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        }
         setShowResultPopup(true);
       } else if (res.data?.problemSolved && !res.data?.allSolved) {
         setDebugOutput(
@@ -1132,12 +1150,12 @@ const ContestPage = () => {
       `}</style>
 
       {/* FULLSCREEN GATEWAY */}
-      {!isExiting && battle?.status !== "finished" && (
+      {!isExiting && battle?.status !== "finished" && !showResultPopup && (
         <FullscreenGatewayModal
           isFullscreen={isFullscreen}
           onEnterFullscreen={enterFullscreen}
           environmentName={isRanked ? "Ranked 1v1 Battle" : "Contest Arena"}
-          disabled={isExiting || battle?.status === "finished"}
+          disabled={isExiting || battle?.status === "finished" || showResultPopup}
         />
       )}
 
@@ -1753,6 +1771,9 @@ const ContestPage = () => {
           isWinner={isWinner}
           winnerName={winnerName}
           onClose={() => {
+            if (document.fullscreenElement) {
+              document.exitFullscreen().catch(() => {});
+            }
             setShowResultPopup(false);
             navigate(`/results/${contestId}`, {
               state: { opponentDraftCode }

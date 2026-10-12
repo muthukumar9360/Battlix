@@ -31,6 +31,13 @@ const ResultPage = () => {
   const currentUsername = localStorage.getItem("username");
 
   useEffect(() => {
+    // Automatically turn off fullscreen when mission telemetry page loads
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
     const fetchSummary = async () => {
       const token = localStorage.getItem("token");
       if (!token) {

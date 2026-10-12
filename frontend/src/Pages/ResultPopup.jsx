@@ -1,13 +1,27 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { FaTimes, FaTrophy, FaTimesCircle, FaArrowRight } from "react-icons/fa";
 
 const ResultPopup = ({ isWinner, winnerName, onClose }) => {
+  useEffect(() => {
+    // Automatically turn off fullscreen when match result popup displays
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, []);
+
+  const handleAction = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+    if (onClose) onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
       <div className="relative bg-[#0a1118] border border-white/20 w-full max-w-md p-8 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] text-center">
         {/* CLOSE BUTTON */}
         <button
-          onClick={onClose}
+          onClick={handleAction}
           className="absolute top-5 right-5 text-gray-400 hover:text-white transition p-2 rounded-full hover:bg-white/5"
           title="Close"
         >
@@ -49,8 +63,8 @@ const ResultPopup = ({ isWinner, winnerName, onClose }) => {
 
         {/* BUTTON */}
         <button
-          onClick={onClose}
-          className="w-full bg-orange-500 hover:bg-orange-400 text-black font-black py-3.5 px-6 rounded-xl text-xs uppercase tracking-[0.2em] transition hover:scale-[1.02] active:scale-95 shadow-lg flex items-center justify-center gap-2"
+          onClick={handleAction}
+          className="w-full bg-orange-500 hover:bg-orange-400 text-black font-black py-3.5 px-6 rounded-xl text-xs uppercase tracking-[0.2em] transition hover:scale-[1.02] active:scale-95 shadow-lg flex items-center justify-center gap-2 cursor-pointer"
         >
           VIEW MISSION TELEMETRY <FaArrowRight />
         </button>
