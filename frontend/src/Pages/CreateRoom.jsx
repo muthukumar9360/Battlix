@@ -542,21 +542,6 @@ const CreateRoom = () => {
                       <FaClock /> Match Duration
                     </label>
                     <div className="flex items-center gap-1 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsUntimed(true);
-                          setDurationHours(0);
-                          setDurationMinutes(0);
-                        }}
-                        className={`px-1.5 sm:px-2 py-0.5 rounded text-[10px] font-mono font-bold border transition cursor-pointer ${
-                          isUntimed
-                            ? "bg-purple-500 text-black border-purple-500 font-black shadow-[0_0_8px_rgba(168,85,247,0.4)]"
-                            : "bg-white/5 border border-white/30 text-purple-300 hover:border-purple-400"
-                        }`}
-                      >
-                        ♾️ Untimed
-                      </button>
                       {[
                         { label: "15m", mins: 15 },
                         { label: "30m", mins: 30 },
