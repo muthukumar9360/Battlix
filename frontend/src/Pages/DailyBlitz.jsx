@@ -173,12 +173,10 @@ const DailyBlitz = () => {
 
   const handlePasteBlocked = (e) => {
     e.preventDefault();
-    triggerViolation("Clipboard paste detected in daily blitz editor");
   };
 
   const handleCopyBlocked = (e) => {
     e.preventDefault();
-    triggerViolation("Copy attempt detected in daily blitz workspace");
   };
 
   // Mandatory Login Gate for Daily Challenge (DC/DT)

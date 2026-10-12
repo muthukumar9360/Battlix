@@ -102,11 +102,10 @@ export const useSecureProctoring = ({
     const handleKeyDown = (e) => {
       if (isTerminatingRef.current) return;
 
-      // 0. Detect automated script / untrusted event
+      // 0. Detect automated script / untrusted event - block without terminating session
       if (e.isTrusted === false) {
         e.preventDefault();
         e.stopPropagation();
-        triggerViolation("Automated synthetic script event detected");
         return;
       }
 
@@ -127,19 +126,12 @@ export const useSecureProctoring = ({
       // 1. Screenshot key (PrintScreen)
       if (e.key === "PrintScreen" || e.code === "PrintScreen") {
         e.preventDefault();
-        try {
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText("").catch(() => {});
-          }
-        } catch (err) {}
-        triggerViolation("Screenshot capture attempted (PrintScreen detected)");
         return;
       }
 
       // 2. Snipping Tool shortcuts (Win+Shift+S / Cmd+Shift+4)
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "S" || e.key === "s" || e.key === "4" || e.key === "3")) {
         e.preventDefault();
-        triggerViolation("Screen capture tool shortcut triggered");
         return;
       }
 
@@ -150,7 +142,6 @@ export const useSecureProctoring = ({
         (cmdOrCtrl && (e.key === "U" || e.key === "u"))
       ) {
         e.preventDefault();
-        triggerViolation("Inspection or Developer Tools shortcut detected");
         return;
       }
 
@@ -163,18 +154,12 @@ export const useSecureProctoring = ({
       // 5. Copy / Cut (Ctrl+C, Ctrl+X) - Strictly blocked
       if (cmdOrCtrl && (e.key === "c" || e.key === "C" || e.key === "x" || e.key === "X")) {
         e.preventDefault();
-        try {
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText("").catch(() => {});
-          }
-        } catch (err) {}
         return;
       }
 
       // 6. Paste (Ctrl+V) - Strictly blocked
       if (cmdOrCtrl && (e.key === "v" || e.key === "V")) {
         e.preventDefault();
-        triggerViolation("Clipboard paste shortcut (Ctrl+V) is strictly prohibited");
         return;
       }
     };
@@ -182,27 +167,16 @@ export const useSecureProctoring = ({
     // Block Copy
     const handleCopy = (e) => {
       e.preventDefault();
-      try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText("").catch(() => {});
-        }
-      } catch (err) {}
     };
 
     // Block Cut
     const handleCut = (e) => {
       e.preventDefault();
-      try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText("").catch(() => {});
-        }
-      } catch (err) {}
     };
 
     // Block Paste
     const handlePaste = (e) => {
       e.preventDefault();
-      triggerViolation("Clipboard paste event detected - manual coding required");
     };
 
     // Block Context Menu (Right Click)

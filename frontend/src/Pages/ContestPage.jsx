@@ -602,13 +602,12 @@ const ContestPage = () => {
 
   const [syntaxHighlight, setSyntaxHighlight] = useState(true);
 
-  // Strict Zero-Tolerance Proctoring
+  // Proctoring Security Notification Handler (Never automatically forfeits active match)
   const handleSecurityTermination = useCallback((reason) => {
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {});
-    }
-    handleExitBattle(true);
-  }, [handleExitBattle]);
+    console.warn("Security notice:", reason);
+    setAlertMessage(`⚠️ Security notice: ${reason}`);
+    setShowSecurityAlert(true);
+  }, []);
 
   const {
     isFullscreen,
@@ -620,15 +619,17 @@ const ContestPage = () => {
     environmentName: isRanked ? "Ranked 1v1 Battle" : "Contest Arena"
   });
 
-  // Anti-Copy & Anti-Paste Enforcement
+  // Anti-Copy & Anti-Paste Enforcement (Blocks clipboard actions safely without ending battle)
   const handlePasteBlocked = (e) => {
     e.preventDefault();
-    triggerViolation("Clipboard paste detected in code editor");
+    setAlertMessage("⚠️ Clipboard paste is disabled in arena workspace. Manual typing required.");
+    setShowSecurityAlert(true);
   };
 
   const handleCopyBlocked = (e) => {
     e.preventDefault();
-    triggerViolation("Copy attempt detected in arena workspace");
+    setAlertMessage("⚠️ Copying text is disabled in arena workspace.");
+    setShowSecurityAlert(true);
   };
 
   // Format MM:SS
@@ -1147,7 +1148,16 @@ const ContestPage = () => {
 
           <span className="text-gray-500">|</span>
 
-          <h1 className="text-lg font-black italic tracking-tighter cursor-pointer" onClick={() => navigate("/")}>
+          <h1
+            className="text-lg font-black italic tracking-tighter cursor-pointer"
+            onClick={() => {
+              if (battle?.status === "finished") {
+                navigate("/");
+              } else {
+                handleExitClick();
+              }
+            }}
+          >
             BATT<span className="text-orange-500">LIX</span>
           </h1>
           <span className={`px-2.5 py-0.5 rounded-full text-[10px] uppercase font-mono tracking-wider ${

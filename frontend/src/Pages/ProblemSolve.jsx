@@ -227,12 +227,10 @@ const ProblemSolve = () => {
 
   const handlePasteBlocked = (e) => {
     e.preventDefault();
-    triggerViolation("Clipboard paste detected in practice editor");
   };
 
   const handleCopyBlocked = (e) => {
     e.preventDefault();
-    triggerViolation("Copy attempt detected in practice workspace");
   };
 
   useEffect(() => {
