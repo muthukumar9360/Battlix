@@ -145,14 +145,36 @@ html.light .bg-black\/90 {
   border-color: #000000 !important;
 }
 
-/* Form inputs & editors in light mode */
-html.light pre,
+/* Form inputs & editors in light mode (excluding specialized code editor) */
+html.light pre:not(.code-editor-pre),
 html.light input:not([type="checkbox"]),
-html.light textarea,
+html.light textarea:not(.code-editor-textarea),
 html.light select {
   background-color: #ffffff !important;
   color: #0f172a !important;
   border-color: #000000 !important;
+}
+
+/* Ensure Code Editor textarea and pre remain transparent and caret/selection are clear */
+.code-editor-textarea {
+  background-color: transparent !important;
+  caret-color: #f97316 !important;
+}
+
+.code-editor-textarea::selection {
+  background-color: rgba(249, 115, 22, 0.4) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html.light .code-editor-textarea {
+  background-color: transparent !important;
+  border-color: transparent !important;
+}
+
+html.light .code-editor-pre {
+  background-color: transparent !important;
+  border-color: transparent !important;
 }
 
 html.light nav {

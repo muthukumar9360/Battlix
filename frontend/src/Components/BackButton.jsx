@@ -6,6 +6,9 @@ const BackButton = ({ to, label = "Back", className = "", fallback = "/" }) => {
   const navigate = useNavigate();
 
   const handleBack = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
     if (to) {
       navigate(to);
     } else if (window.history.length > 1) {

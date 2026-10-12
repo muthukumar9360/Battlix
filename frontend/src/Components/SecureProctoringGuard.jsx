@@ -12,13 +12,14 @@ export const useSecureProctoring = ({
   onTerminate,
   enabled = true,
   environmentName = "Coding Environment",
-  maxWarnings = 3
+  maxWarnings = 3,
+  allowNormalMode = false
 }) => {
   const isLockdownActive = enabled && STRICT_FULLSCREEN_LOCKDOWN;
   const [isFullscreen, setIsFullscreen] = useState(
-    isLockdownActive ? Boolean(document.fullscreenElement) : true
+    isLockdownActive && !allowNormalMode ? Boolean(document.fullscreenElement) : Boolean(document.fullscreenElement)
   );
-  const [hasEnteredFullscreenOnce, setHasEnteredFullscreenOnce] = useState(!isLockdownActive);
+  const [hasEnteredFullscreenOnce, setHasEnteredFullscreenOnce] = useState(!isLockdownActive || allowNormalMode);
   const [warningActive, setWarningActive] = useState(false);
   const [warningCountdown, setWarningCountdown] = useState(10);
   const [warningReason, setWarningReason] = useState("");
@@ -87,7 +88,6 @@ export const useSecureProctoring = ({
 
   // Request fullscreen wrapper
   const enterFullscreen = useCallback(async () => {
-    if (!isLockdownActive) return;
     try {
       if (!document.fullscreenElement) {
         await document.documentElement.requestFullscreen();
@@ -106,14 +106,44 @@ export const useSecureProctoring = ({
     } catch (err) {
       console.warn("Fullscreen permission or activation required:", err);
     }
-  }, [isLockdownActive, warningActive]);
+  }, [warningActive]);
+
+  // Exit fullscreen wrapper (restores normal windowed mode)
+  const exitFullscreen = useCallback(async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      }
+      setIsFullscreen(false);
+      if (warningActive) {
+        if (countdownTimerRef.current) {
+          clearInterval(countdownTimerRef.current);
+          countdownTimerRef.current = null;
+        }
+        setWarningActive(false);
+      }
+    } catch (err) {
+      console.warn("Exit fullscreen error:", err);
+    }
+  }, [warningActive]);
+
+  // Toggle fullscreen mode
+  const toggleFullscreen = useCallback(async () => {
+    if (document.fullscreenElement) {
+      await exitFullscreen();
+    } else {
+      await enterFullscreen();
+    }
+  }, [enterFullscreen, exitFullscreen]);
 
   // Handle Fullscreen state change
   useEffect(() => {
     if (!isLockdownActive) return;
 
-    // Try auto-fullscreen on mount
-    enterFullscreen();
+    // Try auto-fullscreen on mount if not in normal mode preference
+    if (!allowNormalMode) {
+      enterFullscreen();
+    }
 
     const handleFullscreenChange = () => {
       const active = Boolean(document.fullscreenElement);
@@ -127,8 +157,8 @@ export const useSecureProctoring = ({
           countdownTimerRef.current = null;
         }
         setWarningActive(false);
-      } else if (hasEnteredFullscreenOnce && !isTerminatingRef.current) {
-        // Skillrack-style: Show warning modal with 10s timer instead of instant disqualify
+      } else if (!allowNormalMode && hasEnteredFullscreenOnce && !isTerminatingRef.current) {
+        // Skillrack-style: Show warning modal with 10s timer in strict lockdown matches
         startWarningSequence("Exited Full-Screen mode (Esc or window minimize)");
       }
     };
@@ -274,6 +304,10 @@ export const useSecureProctoring = ({
       if (countdownTimerRef.current) {
         clearInterval(countdownTimerRef.current);
       }
+      // Automatically exit fullscreen and return to normal mode upon unmounting/exiting
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("blur", handleWindowBlur);
@@ -283,7 +317,7 @@ export const useSecureProctoring = ({
       document.removeEventListener("paste", handlePaste, true);
       document.removeEventListener("contextmenu", handleContextMenu, true);
     };
-  }, [isLockdownActive, hasEnteredFullscreenOnce, enterFullscreen, startWarningSequence, triggerViolation, warningActive]);
+  }, [isLockdownActive, hasEnteredFullscreenOnce, enterFullscreen, startWarningSequence, triggerViolation, warningActive, allowNormalMode]);
 
   return {
     isFullscreen,
@@ -294,6 +328,8 @@ export const useSecureProctoring = ({
     warningCount,
     maxWarnings,
     enterFullscreen,
+    exitFullscreen,
+    toggleFullscreen,
     triggerViolation
   };
 };
@@ -312,6 +348,8 @@ export const SkillrackSecurityModal = ({
   warningCount = 1,
   maxWarnings = 3,
   onEnterFullscreen,
+  onContinueNormalMode,
+  allowNormalMode = false,
   environmentName = "Contest Arena"
 }) => {
   if (!STRICT_FULLSCREEN_LOCKDOWN) return null;
@@ -377,42 +415,61 @@ export const SkillrackSecurityModal = ({
           </div>
 
           <div className="inline-block px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 font-mono text-[10px] font-bold uppercase tracking-widest mb-3">
-            Lockdown Security Active
+            Workspace Configuration
           </div>
 
           <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white mb-2">
-            Fullscreen Required
+            {allowNormalMode ? "Choose Viewing Mode" : "Fullscreen Required"}
           </h2>
 
           <p className="text-xs text-gray-300 font-mono leading-relaxed mb-6">
-            To maintain strict competitive integrity for <span className="text-orange-400 font-bold">{environmentName}</span>, the workspace must operate in full-screen mode.
+            {allowNormalMode
+              ? `You can solve in immersion Fullscreen Mode or windowed Normal Mode.`
+              : `To maintain strict competitive integrity for ${environmentName}, the workspace operates in full-screen mode.`}
           </p>
 
           <div className="bg-black/60 border border-white/10 rounded-2xl p-4 text-left font-mono text-xs space-y-2 mb-6 text-gray-300">
             <div className="flex items-start gap-2 text-white font-bold">
               <FaLock className="text-orange-400 mt-0.5 shrink-0" />
-              <span>Strict Anti-Cheat Regulations:</span>
+              <span>Workspace Guidelines:</span>
             </div>
             <div className="flex items-start gap-2 text-[11px] text-gray-400">
               <FaBan className="text-red-400 mt-0.5 shrink-0" />
-              <span>Copy, Paste, and Cut are completely disabled.</span>
+              <span>Copy, Paste, and Cut are disabled in editor.</span>
             </div>
             <div className="flex items-start gap-2 text-[11px] text-gray-400">
               <FaBan className="text-red-400 mt-0.5 shrink-0" />
               <span>Autotypers, automated scripts, and bots are prohibited.</span>
             </div>
-            <div className="flex items-start gap-2 text-[11px] text-amber-300 font-bold">
-              <FaExclamationTriangle className="text-amber-400 mt-0.5 shrink-0" />
-              <span>Exiting fullscreen triggers a 10s Skillrack countdown warning.</span>
-            </div>
+            {allowNormalMode ? (
+              <div className="flex items-start gap-2 text-[11px] text-emerald-400 font-semibold">
+                <FaExpand className="text-emerald-400 mt-0.5 shrink-0" />
+                <span>Normal Mode is available: toggle or exit anytime without penalty.</span>
+              </div>
+            ) : (
+              <div className="flex items-start gap-2 text-[11px] text-amber-300 font-bold">
+                <FaExclamationTriangle className="text-amber-400 mt-0.5 shrink-0" />
+                <span>Exiting fullscreen triggers a 10s Skillrack countdown warning.</span>
+              </div>
+            )}
           </div>
 
-          <button
-            onClick={onEnterFullscreen}
-            className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-black font-mono text-sm uppercase tracking-wider rounded-xl transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <FaExpand /> Enter Fullscreen Environment
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={onEnterFullscreen}
+              className="flex-1 py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-black font-mono text-sm uppercase tracking-wider rounded-xl transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <FaExpand /> Fullscreen Mode
+            </button>
+            {allowNormalMode && onContinueNormalMode && (
+              <button
+                onClick={onContinueNormalMode}
+                className="flex-1 py-3.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+              >
+                Normal Mode
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );

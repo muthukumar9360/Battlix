@@ -9,7 +9,7 @@
  * - Backspace Pair Deletion: Deletes matching empty bracket/quote pairs in one stroke
  */
 
-export const handleEditorKeyDown = (e, code, setCode) => {
+export const handleEditorKeyDown = (e, code, setCode, setCursor) => {
   const { key, shiftKey } = e;
   const textarea = e.target;
   const { selectionStart: start, selectionEnd: end, value } = textarea;
@@ -25,6 +25,18 @@ export const handleEditorKeyDown = (e, code, setCode) => {
 
   const closingChars = [")", "]", "}", '"', "'", "`"];
 
+  // Helper to synchronously apply code changes and preserve exact cursor position
+  const applyChange = (newCode, cursorStart, cursorEnd = cursorStart) => {
+    if (setCursor) {
+      setCursor(cursorStart, cursorEnd);
+    }
+    textarea.value = newCode;
+    textarea.setSelectionRange(cursorStart, cursorEnd);
+    if (setCode) {
+      setCode(newCode);
+    }
+  };
+
   // 1. TAB & SHIFT+TAB (MAINTAIN SPACES / INDENT / OUTDENT)
   if (key === "Tab") {
     e.preventDefault();
@@ -32,10 +44,7 @@ export const handleEditorKeyDown = (e, code, setCode) => {
       if (!shiftKey) {
         // Simple 4-space indent at cursor
         const newCode = value.substring(0, start) + "    " + value.substring(end);
-        setCode(newCode);
-        setTimeout(() => {
-          textarea.selectionStart = textarea.selectionEnd = start + 4;
-        }, 0);
+        applyChange(newCode, start + 4, start + 4);
       } else {
         // Shift+Tab without selection: remove up to 4 spaces before cursor
         const lineStart = value.lastIndexOf("\n", start - 1) + 1;
@@ -44,10 +53,7 @@ export const handleEditorKeyDown = (e, code, setCode) => {
         if (match) {
           const removeLen = match[1].length;
           const newCode = value.substring(0, start - removeLen) + value.substring(start);
-          setCode(newCode);
-          setTimeout(() => {
-            textarea.selectionStart = textarea.selectionEnd = start - removeLen;
-          }, 0);
+          applyChange(newCode, start - removeLen, start - removeLen);
         }
       }
     } else {
@@ -62,12 +68,8 @@ export const handleEditorKeyDown = (e, code, setCode) => {
         const newLines = lines.map(line => "    " + line);
         const replacement = newLines.join("\n");
         const newCode = value.substring(0, lineStart) + replacement + value.substring(lineEnd);
-        setCode(newCode);
         const added = lines.length * 4;
-        setTimeout(() => {
-          textarea.selectionStart = start + 4;
-          textarea.selectionEnd = end + added;
-        }, 0);
+        applyChange(newCode, start + 4, end + added);
       } else {
         // Outdent all lines
         let removedFirst = 0;
@@ -84,11 +86,11 @@ export const handleEditorKeyDown = (e, code, setCode) => {
         });
         const replacement = newLines.join("\n");
         const newCode = value.substring(0, lineStart) + replacement + value.substring(lineEnd);
-        setCode(newCode);
-        setTimeout(() => {
-          textarea.selectionStart = Math.max(lineStart, start - removedFirst);
-          textarea.selectionEnd = Math.max(lineStart, end - totalRemoved);
-        }, 0);
+        applyChange(
+          newCode,
+          Math.max(lineStart, start - removedFirst),
+          Math.max(lineStart, end - totalRemoved)
+        );
       }
     }
     return;
@@ -115,10 +117,8 @@ export const handleEditorKeyDown = (e, code, setCode) => {
       const extraIndent = currentIndent + "    ";
       const insertion = "\n" + extraIndent + "\n" + currentIndent;
       const newCode = value.substring(0, start) + insertion + value.substring(end);
-      setCode(newCode);
-      setTimeout(() => {
-        textarea.selectionStart = textarea.selectionEnd = start + 1 + extraIndent.length;
-      }, 0);
+      const newPos = start + 1 + extraIndent.length;
+      applyChange(newCode, newPos, newPos);
       return;
     }
 
@@ -132,10 +132,8 @@ export const handleEditorKeyDown = (e, code, setCode) => {
 
     const newIndent = shouldAddIndent ? currentIndent + "    " : currentIndent;
     const newCode = value.substring(0, start) + "\n" + newIndent + value.substring(end);
-    setCode(newCode);
-    setTimeout(() => {
-      textarea.selectionStart = textarea.selectionEnd = start + 1 + newIndent.length;
-    }, 0);
+    const newPos = start + 1 + newIndent.length;
+    applyChange(newCode, newPos, newPos);
     return;
   }
 
@@ -143,33 +141,41 @@ export const handleEditorKeyDown = (e, code, setCode) => {
   if (closingChars.includes(key) && start === end && value[start] === key) {
     // If next character is already the typed closing character, skip past it
     e.preventDefault();
-    textarea.selectionStart = textarea.selectionEnd = start + 1;
+    textarea.setSelectionRange(start + 1, start + 1);
+    if (setCursor) {
+      setCursor(start + 1, start + 1);
+    }
     return;
   }
 
   // 4. BRACKETS & QUOTES AUTO-CLOSE AND SELECTION WRAPPING
   if (pairs[key]) {
-    e.preventDefault();
     const closeChar = pairs[key];
 
     if (start !== end) {
       // Selection wrapping: wrap selected code in brackets or quotes
+      e.preventDefault();
       const selectedText = value.substring(start, end);
       const wrapped = key + selectedText + closeChar;
       const newCode = value.substring(0, start) + wrapped + value.substring(end);
-      setCode(newCode);
-      setTimeout(() => {
-        textarea.selectionStart = start + 1;
-        textarea.selectionEnd = end + 1;
-      }, 0);
-    } else {
-      // Auto-insert closing pair and place cursor between them
-      const newCode = value.substring(0, start) + key + closeChar + value.substring(end);
-      setCode(newCode);
-      setTimeout(() => {
-        textarea.selectionStart = textarea.selectionEnd = start + 1;
-      }, 0);
+      applyChange(newCode, start + 1, end + 1);
+      return;
     }
+
+    // For quotes, don't auto-pair if immediately followed by word characters or inside word
+    const nextChar = value[start] || "";
+    const isQuote = key === '"' || key === "'" || key === "`";
+    const isNextWordChar = /[a-zA-Z0-9_]/.test(nextChar);
+
+    if (isQuote && isNextWordChar) {
+      // Allow regular typing of quote character without auto-pairing
+      return;
+    }
+
+    // Auto-insert closing pair and place cursor between them
+    e.preventDefault();
+    const newCode = value.substring(0, start) + key + closeChar + value.substring(end);
+    applyChange(newCode, start + 1, start + 1);
     return;
   }
 
@@ -188,10 +194,7 @@ export const handleEditorKeyDown = (e, code, setCode) => {
     ) {
       e.preventDefault();
       const newCode = value.substring(0, start - 1) + value.substring(start + 1);
-      setCode(newCode);
-      setTimeout(() => {
-        textarea.selectionStart = textarea.selectionEnd = start - 1;
-      }, 0);
+      applyChange(newCode, start - 1, start - 1);
       return;
     }
   }

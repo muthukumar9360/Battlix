@@ -152,8 +152,13 @@ const ProblemSolve = () => {
     handleEditorKeyDown(e, code, setCode);
   };
 
-  // Strict Zero-Tolerance Proctoring
+  const [syntaxHighlight, setSyntaxHighlight] = useState(true);
+
+  // Strict Zero-Tolerance Proctoring with Practice Normal Mode support
   const handleSecurityTermination = useCallback((reason) => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
     navigate("/problems");
   }, [navigate]);
 
@@ -165,12 +170,29 @@ const ProblemSolve = () => {
     warningCount,
     maxWarnings,
     enterFullscreen,
+    exitFullscreen,
+    toggleFullscreen,
     triggerViolation
   } = useSecureProctoring({
     onTerminate: handleSecurityTermination,
     enabled: true,
-    environmentName: "Practice Arena"
+    environmentName: "Practice Arena",
+    allowNormalMode: true
   });
+
+  const handleExitToProblems = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+    navigate("/problems");
+  };
+
+  const handleExitToHome = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+    navigate("/");
+  };
 
   const handlePasteBlocked = (e) => {
     e.preventDefault();
@@ -459,7 +481,7 @@ const ProblemSolve = () => {
         }
       `}</style>
 
-      {/* MANDATORY FULLSCREEN GATEWAY & SKILLRACK WARNING */}
+      {/* FULLSCREEN GATEWAY & SKILLRACK WARNING */}
       <FullscreenGatewayModal
         isFullscreen={isFullscreen}
         warningActive={warningActive}
@@ -468,6 +490,8 @@ const ProblemSolve = () => {
         warningCount={warningCount}
         maxWarnings={maxWarnings}
         onEnterFullscreen={enterFullscreen}
+        onContinueNormalMode={exitFullscreen}
+        allowNormalMode={true}
         environmentName="Practice Arena"
       />
 
@@ -475,13 +499,14 @@ const ProblemSolve = () => {
       <nav className="w-full py-2.5 px-4 mt-3 sm:px-6 md:px-8 bg-[#0a1118] border-b border-white/20 flex justify-between items-center shrink-0 z-40">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate("/problems")}
-            className="flex items-center gap-1.5 text-gray-300 hover:text-white text-xs font-bold uppercase transition bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/30 hover:border-white"
+            onClick={handleExitToProblems}
+            className="flex items-center gap-1.5 text-gray-300 hover:text-white text-xs font-bold uppercase transition bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/30 hover:border-white cursor-pointer"
+            title="Exit to Problems list (Restores Normal Window Mode)"
           >
             <FaArrowLeft /> Problems
           </button>
           <span className="text-gray-500">|</span>
-          <h1 className="text-lg font-black italic tracking-tighter cursor-pointer" onClick={() => navigate("/")}>
+          <h1 className="text-lg font-black italic tracking-tighter cursor-pointer" onClick={handleExitToHome}>
             BATT<span className="text-orange-500">LIX</span>
           </h1>
           <span className="px-2.5 py-0.5 bg-white/5 border border-white/30 rounded-full text-[10px] uppercase font-mono tracking-wider text-white">
@@ -489,8 +514,15 @@ const ProblemSolve = () => {
           </span>
         </div>
 
-        {/* LOGGED IN USER STATUS */}
+        {/* LOGGED IN USER STATUS & FULLSCREEN CONTROLS */}
         <div className="flex items-center gap-3">
+          <button
+            onClick={toggleFullscreen}
+            className="hidden sm:flex items-center gap-1.5 text-xs font-mono font-bold uppercase px-3 py-1.5 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition cursor-pointer"
+            title={isFullscreen ? "Exit Fullscreen to Normal Mode" : "Enter Fullscreen Mode"}
+          >
+            {isFullscreen ? "Normal Mode" : "Fullscreen"}
+          </button>
           <div className="flex items-center gap-2 bg-white/5 border border-white/20 px-3 py-1.5 rounded-xl font-mono text-xs shadow-sm">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <FaUser className="text-orange-400 text-xs" />
@@ -644,6 +676,10 @@ const ProblemSolve = () => {
               language={language}
               onLanguageChange={handleLanguageChange}
               title="Solution Workspace // Tab=Indent"
+              isFullscreen={isFullscreen}
+              onToggleFullscreen={toggleFullscreen}
+              syntaxHighlight={syntaxHighlight}
+              onToggleSyntax={() => setSyntaxHighlight((prev) => !prev)}
             />
 
             {/* CODE EDITOR WITH SYNTAX COLOR HIGHLIGHTING & LINE NUMBERS */}
@@ -655,6 +691,7 @@ const ProblemSolve = () => {
                 placeholder="// Write your algorithmic solution here..."
                 onPaste={handlePasteBlocked}
                 onCopy={handleCopyBlocked}
+                syntaxHighlight={syntaxHighlight}
               />
             </div>
 

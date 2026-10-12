@@ -530,6 +530,9 @@ const ContestPage = () => {
     } catch (err) {
       console.warn("Abandon request completed (navigating to results telemetry):", err);
     } finally {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
       navigate(`/results/${contestId}`, {
         state: { opponentDraftCode }
       });
@@ -539,6 +542,9 @@ const ContestPage = () => {
   // Squad Consensus Exit Click Handler
   const handleExitClick = () => {
     if (battle?.status === "finished") {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
       navigate(`/results/${contestId}`, {
         state: { opponentDraftCode }
       });
@@ -594,8 +600,13 @@ const ContestPage = () => {
     setIsMyExitRequested(false);
   };
 
+  const [syntaxHighlight, setSyntaxHighlight] = useState(true);
+
   // Strict Zero-Tolerance Proctoring
   const handleSecurityTermination = useCallback((reason) => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
     handleExitBattle(true);
   }, [handleExitBattle]);
 
@@ -607,6 +618,8 @@ const ContestPage = () => {
     warningCount,
     maxWarnings,
     enterFullscreen,
+    exitFullscreen,
+    toggleFullscreen,
     triggerViolation
   } = useSecureProctoring({
     onTerminate: handleSecurityTermination,
@@ -1649,6 +1662,10 @@ const ContestPage = () => {
               language={language}
               onLanguageChange={handleLanguageChange}
               title={problemsList.length > 1 ? `Solution Workspace // Q${safeActiveIndex + 1}: ${currentProblem?.title || `Challenge ${safeActiveIndex + 1}`}` : "Solution Workspace // Tab=Indent"}
+              isFullscreen={isFullscreen}
+              onToggleFullscreen={toggleFullscreen}
+              syntaxHighlight={syntaxHighlight}
+              onToggleSyntax={() => setSyntaxHighlight((prev) => !prev)}
             />
 
             {/* CODE EDITOR WITH SYNTAX COLOR HIGHLIGHTING & LINE NUMBERS */}
@@ -1660,6 +1677,7 @@ const ContestPage = () => {
                 placeholder="// Execute your algorithm here...&#10;// Anti-cheat is armed: live typing only."
                 onPaste={handlePasteBlocked}
                 onCopy={handleCopyBlocked}
+                syntaxHighlight={syntaxHighlight}
               />
             </div>
 

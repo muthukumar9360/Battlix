@@ -78,9 +78,9 @@ export const highlightCode = (code, lang = "python") => {
     html += escapeHtml(remaining);
   }
 
-  // Ensure trailing newline renders matching height in <pre>
+  // Ensure trailing newline renders matching height in <pre> without collapsing
   if (code.endsWith("\n")) {
-    html += " ";
+    html += "\n ";
   }
 
   return html;

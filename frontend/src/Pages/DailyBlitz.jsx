@@ -127,7 +127,12 @@ const DailyBlitz = () => {
   });
 
   // Strict Zero-Tolerance Proctoring
+  const [syntaxHighlight, setSyntaxHighlight] = useState(true);
+
   const handleSecurityTermination = useCallback((reason) => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
     navigate("/");
   }, [navigate]);
 
@@ -139,11 +144,14 @@ const DailyBlitz = () => {
     warningCount,
     maxWarnings,
     enterFullscreen,
+    exitFullscreen,
+    toggleFullscreen,
     triggerViolation
   } = useSecureProctoring({
     onTerminate: handleSecurityTermination,
     enabled: true,
-    environmentName: "Daily Blitz Challenge"
+    environmentName: "Daily Blitz Challenge",
+    allowNormalMode: true
   });
 
   const handlePasteBlocked = (e) => {
@@ -333,7 +341,7 @@ const DailyBlitz = () => {
         }
       `}</style>
 
-      {/* MANDATORY FULLSCREEN GATEWAY & SKILLRACK WARNING */}
+      {/* FULLSCREEN GATEWAY & SKILLRACK WARNING */}
       <FullscreenGatewayModal
         isFullscreen={isFullscreen}
         warningActive={warningActive}
@@ -342,6 +350,8 @@ const DailyBlitz = () => {
         warningCount={warningCount}
         maxWarnings={maxWarnings}
         onEnterFullscreen={enterFullscreen}
+        onContinueNormalMode={exitFullscreen}
+        allowNormalMode={true}
         environmentName="Daily Blitz Challenge"
       />
 
@@ -368,8 +378,15 @@ const DailyBlitz = () => {
           </div>
         </div>
 
-        {/* STATUS INDICATOR (NO TIMER) */}
+        {/* STATUS INDICATOR & FULLSCREEN CONTROLS */}
         <div className="flex items-center gap-3">
+          <button
+            onClick={toggleFullscreen}
+            className="hidden sm:flex items-center gap-1.5 text-xs font-mono font-bold uppercase px-3 py-1.5 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition cursor-pointer"
+            title={isFullscreen ? "Exit Fullscreen to Normal Mode" : "Enter Fullscreen Mode"}
+          >
+            {isFullscreen ? "Normal Mode" : "Fullscreen"}
+          </button>
           <div
             className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border font-mono transition-all duration-300 ${
               isAlreadySolved
@@ -492,6 +509,10 @@ const DailyBlitz = () => {
             language={language}
             onLanguageChange={handleLanguageChange}
             title="Solution Workspace // Tab=Indent"
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={toggleFullscreen}
+            syntaxHighlight={syntaxHighlight}
+            onToggleSyntax={() => setSyntaxHighlight((prev) => !prev)}
           />
 
           {/* CODE EDITOR WITH SYNTAX COLOR HIGHLIGHTING & LINE NUMBERS */}
@@ -503,6 +524,7 @@ const DailyBlitz = () => {
               placeholder="Type your optimal solution here..."
               onPaste={handlePasteBlocked}
               onCopy={handleCopyBlocked}
+              syntaxHighlight={syntaxHighlight}
             />
           </div>
 
