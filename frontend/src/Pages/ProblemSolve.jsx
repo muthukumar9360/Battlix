@@ -154,33 +154,56 @@ const ProblemSolve = () => {
 
   const [syntaxHighlight, setSyntaxHighlight] = useState(true);
 
-  // Strict Zero-Tolerance Proctoring with Practice Normal Mode support
+  // Strict Zero-Tolerance Single-Attempt Proctoring: Delete saved code and exit immediately on fullscreen exit
   const handleSecurityTermination = useCallback((reason) => {
+    // 1. Delete all saved code for this problem in localStorage
+    try {
+      const langs = ["python", "javascript", "cpp", "java", "c"];
+      langs.forEach(l => {
+        localStorage.removeItem(`practice_code_${slug}_${l}`);
+      });
+      localStorage.removeItem(`practice_code_${slug}_${language}`);
+    } catch (e) {}
+
+    // 2. Clear in-memory workspace code
+    setCode("");
+    setCodeByLang({
+      python: STARTER_CODES.python,
+      javascript: STARTER_CODES.javascript,
+      cpp: STARTER_CODES.cpp,
+      java: STARTER_CODES.java,
+      c: STARTER_CODES.c
+    });
+
+    // 3. Exit fullscreen
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
     }
-    navigate("/problems");
-  }, [navigate]);
+
+    // 4. Intimate user and terminate session
+    alert("⚠️ SESSION TERMINATED: Fullscreen mode was exited.\n\nStrict one-attempt policy enforced. Your session has ended and saved code has been deleted.");
+    navigate("/problems", { replace: true });
+  }, [navigate, slug, language]);
 
   const {
     isFullscreen,
-    warningActive,
-    warningCountdown,
-    warningReason,
-    warningCount,
-    maxWarnings,
     enterFullscreen,
-    exitFullscreen,
-    toggleFullscreen,
     triggerViolation
   } = useSecureProctoring({
     onTerminate: handleSecurityTermination,
     enabled: true,
-    environmentName: "Practice Arena",
-    allowNormalMode: true
+    environmentName: "Practice Arena"
   });
 
   const handleExitToProblems = () => {
+    try {
+      const langs = ["python", "javascript", "cpp", "java", "c"];
+      langs.forEach(l => {
+        localStorage.removeItem(`practice_code_${slug}_${l}`);
+      });
+      localStorage.removeItem(`practice_code_${slug}_${language}`);
+    } catch (e) {}
+    setCode("");
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
     }
@@ -188,6 +211,14 @@ const ProblemSolve = () => {
   };
 
   const handleExitToHome = () => {
+    try {
+      const langs = ["python", "javascript", "cpp", "java", "c"];
+      langs.forEach(l => {
+        localStorage.removeItem(`practice_code_${slug}_${l}`);
+      });
+      localStorage.removeItem(`practice_code_${slug}_${language}`);
+    } catch (e) {}
+    setCode("");
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
     }
@@ -481,17 +512,10 @@ const ProblemSolve = () => {
         }
       `}</style>
 
-      {/* FULLSCREEN GATEWAY & SKILLRACK WARNING */}
+      {/* FULLSCREEN GATEWAY */}
       <FullscreenGatewayModal
         isFullscreen={isFullscreen}
-        warningActive={warningActive}
-        warningCountdown={warningCountdown}
-        warningReason={warningReason}
-        warningCount={warningCount}
-        maxWarnings={maxWarnings}
         onEnterFullscreen={enterFullscreen}
-        onContinueNormalMode={exitFullscreen}
-        allowNormalMode={true}
         environmentName="Practice Arena"
       />
 
@@ -501,7 +525,7 @@ const ProblemSolve = () => {
           <button
             onClick={handleExitToProblems}
             className="flex items-center gap-1.5 text-gray-300 hover:text-white text-xs font-bold uppercase transition bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/30 hover:border-white cursor-pointer"
-            title="Exit to Problems list (Restores Normal Window Mode)"
+            title="Exit to Problems list"
           >
             <FaArrowLeft /> Problems
           </button>
@@ -514,15 +538,8 @@ const ProblemSolve = () => {
           </span>
         </div>
 
-        {/* LOGGED IN USER STATUS & FULLSCREEN CONTROLS */}
+        {/* LOGGED IN USER STATUS */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={toggleFullscreen}
-            className="hidden sm:flex items-center gap-1.5 text-xs font-mono font-bold uppercase px-3 py-1.5 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition cursor-pointer"
-            title={isFullscreen ? "Exit Fullscreen to Normal Mode" : "Enter Fullscreen Mode"}
-          >
-            {isFullscreen ? "Normal Mode" : "Fullscreen"}
-          </button>
           <div className="flex items-center gap-2 bg-white/5 border border-white/20 px-3 py-1.5 rounded-xl font-mono text-xs shadow-sm">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <FaUser className="text-orange-400 text-xs" />
@@ -676,8 +693,6 @@ const ProblemSolve = () => {
               language={language}
               onLanguageChange={handleLanguageChange}
               title="Solution Workspace // Tab=Indent"
-              isFullscreen={isFullscreen}
-              onToggleFullscreen={toggleFullscreen}
               syntaxHighlight={syntaxHighlight}
               onToggleSyntax={() => setSyntaxHighlight((prev) => !prev)}
             />

@@ -612,14 +612,7 @@ const ContestPage = () => {
 
   const {
     isFullscreen,
-    warningActive,
-    warningCountdown,
-    warningReason,
-    warningCount,
-    maxWarnings,
     enterFullscreen,
-    exitFullscreen,
-    toggleFullscreen,
     triggerViolation
   } = useSecureProctoring({
     onTerminate: handleSecurityTermination,
@@ -1118,14 +1111,9 @@ const ContestPage = () => {
         }
       `}</style>
 
-      {/* MANDATORY FULLSCREEN GATEWAY & SKILLRACK WARNING */}
+      {/* FULLSCREEN GATEWAY */}
       <FullscreenGatewayModal
         isFullscreen={isFullscreen}
-        warningActive={warningActive}
-        warningCountdown={warningCountdown}
-        warningReason={warningReason}
-        warningCount={warningCount}
-        maxWarnings={maxWarnings}
         onEnterFullscreen={enterFullscreen}
         environmentName={isRanked ? "Ranked 1v1 Battle" : "Contest Arena"}
       />
@@ -1662,8 +1650,6 @@ const ContestPage = () => {
               language={language}
               onLanguageChange={handleLanguageChange}
               title={problemsList.length > 1 ? `Solution Workspace // Q${safeActiveIndex + 1}: ${currentProblem?.title || `Challenge ${safeActiveIndex + 1}`}` : "Solution Workspace // Tab=Indent"}
-              isFullscreen={isFullscreen}
-              onToggleFullscreen={toggleFullscreen}
               syntaxHighlight={syntaxHighlight}
               onToggleSyntax={() => setSyntaxHighlight((prev) => !prev)}
             />

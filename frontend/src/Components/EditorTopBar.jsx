@@ -1,13 +1,11 @@
 import React from "react";
 import LanguageSelector from "./LanguageSelector.jsx";
-import { FaCompress, FaExpand, FaPalette } from "react-icons/fa";
+import { FaPalette } from "react-icons/fa";
 
 export const EditorTopBar = ({
   language,
   onLanguageChange,
   title = "Solution Workspace // Tab=Indent",
-  isFullscreen = false,
-  onToggleFullscreen,
   syntaxHighlight = true,
   onToggleSyntax
 }) => {
@@ -43,28 +41,6 @@ export const EditorTopBar = ({
             <span className="hidden sm:inline">
               {syntaxHighlight ? "Syntax: On" : "Direct Text"}
             </span>
-          </button>
-        )}
-
-        {/* FULLSCREEN / NORMAL MODE TOGGLE (IF PROVIDED) */}
-        {onToggleFullscreen && (
-          <button
-            type="button"
-            onClick={onToggleFullscreen}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold uppercase tracking-wider border border-white/20 bg-white/5 hover:bg-white/15 text-gray-200 hover:text-white transition cursor-pointer shadow-sm active:scale-95"
-            title={isFullscreen ? "Exit Fullscreen (Normal Mode)" : "Enter Fullscreen Mode"}
-          >
-            {isFullscreen ? (
-              <>
-                <FaCompress className="text-orange-400 text-xs" />
-                <span>Normal Mode</span>
-              </>
-            ) : (
-              <>
-                <FaExpand className="text-orange-400 text-xs" />
-                <span>Fullscreen</span>
-              </>
-            )}
           </button>
         )}
 

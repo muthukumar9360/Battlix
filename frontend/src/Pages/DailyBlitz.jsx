@@ -126,32 +126,49 @@ const DailyBlitz = () => {
     storageKey: "battlix_daily_split"
   });
 
-  // Strict Zero-Tolerance Proctoring
   const [syntaxHighlight, setSyntaxHighlight] = useState(true);
 
+  // Strict Zero-Tolerance Single-Attempt Proctoring: Delete saved code and exit immediately on fullscreen exit
   const handleSecurityTermination = useCallback((reason) => {
+    // 1. Delete all saved code for this daily problem in localStorage
+    try {
+      if (problem?.slug) {
+        const langs = ["python", "javascript", "cpp", "java", "c"];
+        langs.forEach(l => {
+          localStorage.removeItem(`daily_code_${problem.slug}_${l}`);
+        });
+        localStorage.removeItem(`daily_code_${problem.slug}_${language}`);
+      }
+    } catch (e) {}
+
+    // 2. Clear current in-memory workspace code
+    setCode("");
+    setCodeByLang({
+      python: STARTER_CODES.python,
+      javascript: STARTER_CODES.javascript,
+      cpp: STARTER_CODES.cpp,
+      java: STARTER_CODES.java,
+      c: STARTER_CODES.c
+    });
+
+    // 3. Exit fullscreen
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
     }
-    navigate("/");
-  }, [navigate]);
+
+    // 4. Intimate user and terminate challenge attempt
+    alert("⚠️ CHALLENGE TERMINATED: Fullscreen mode was exited.\n\nStrict one-attempt policy enforced. Your daily session has ended and saved code has been deleted.");
+    navigate("/", { replace: true });
+  }, [navigate, problem?.slug, language]);
 
   const {
     isFullscreen,
-    warningActive,
-    warningCountdown,
-    warningReason,
-    warningCount,
-    maxWarnings,
     enterFullscreen,
-    exitFullscreen,
-    toggleFullscreen,
     triggerViolation
   } = useSecureProctoring({
     onTerminate: handleSecurityTermination,
     enabled: true,
-    environmentName: "Daily Blitz Challenge",
-    allowNormalMode: true
+    environmentName: "Daily Blitz Challenge"
   });
 
   const handlePasteBlocked = (e) => {
@@ -341,17 +358,10 @@ const DailyBlitz = () => {
         }
       `}</style>
 
-      {/* FULLSCREEN GATEWAY & SKILLRACK WARNING */}
+      {/* FULLSCREEN GATEWAY */}
       <FullscreenGatewayModal
         isFullscreen={isFullscreen}
-        warningActive={warningActive}
-        warningCountdown={warningCountdown}
-        warningReason={warningReason}
-        warningCount={warningCount}
-        maxWarnings={maxWarnings}
         onEnterFullscreen={enterFullscreen}
-        onContinueNormalMode={exitFullscreen}
-        allowNormalMode={true}
         environmentName="Daily Blitz Challenge"
       />
 
@@ -378,15 +388,8 @@ const DailyBlitz = () => {
           </div>
         </div>
 
-        {/* STATUS INDICATOR & FULLSCREEN CONTROLS */}
+        {/* STATUS INDICATOR (NO TIMER) */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={toggleFullscreen}
-            className="hidden sm:flex items-center gap-1.5 text-xs font-mono font-bold uppercase px-3 py-1.5 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition cursor-pointer"
-            title={isFullscreen ? "Exit Fullscreen to Normal Mode" : "Enter Fullscreen Mode"}
-          >
-            {isFullscreen ? "Normal Mode" : "Fullscreen"}
-          </button>
           <div
             className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border font-mono transition-all duration-300 ${
               isAlreadySolved
@@ -509,8 +512,6 @@ const DailyBlitz = () => {
             language={language}
             onLanguageChange={handleLanguageChange}
             title="Solution Workspace // Tab=Indent"
-            isFullscreen={isFullscreen}
-            onToggleFullscreen={toggleFullscreen}
             syntaxHighlight={syntaxHighlight}
             onToggleSyntax={() => setSyntaxHighlight((prev) => !prev)}
           />
