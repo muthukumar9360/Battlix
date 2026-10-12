@@ -91,7 +91,7 @@ int main() {
 
 const DailyBlitz = () => {
   const navigate = useNavigate();
-  const API = import.meta.env.VITE_API_URL || "https://battlic-backend.onrender.com";
+  const API = import.meta.env.VITE_API_URL || "https://battlix-backend.onrender.com";
 
   const [problem, setProblem] = useState(null);
   const [dailyDate, setDailyDate] = useState("");

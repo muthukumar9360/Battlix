@@ -18,7 +18,7 @@ const LeetCodeActivityModule = ({
   activeDaysCount = 0
 }) => {
   const navigate = useNavigate();
-  const API = import.meta.env.VITE_API_URL || "https://battlic-backend.onrender.com";
+  const API = import.meta.env.VITE_API_URL || "https://battlix-backend.onrender.com";
 
   // Calendar State
   const [currentDate, setCurrentDate] = useState(new Date());

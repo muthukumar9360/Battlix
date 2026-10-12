@@ -17,7 +17,7 @@ import BackButton from "../Components/BackButton.jsx";
 
 const CreateProgram = () => {
   const navigate = useNavigate();
-  const API = import.meta.env.VITE_API_URL || "https://battlic-backend.onrender.com";
+  const API = import.meta.env.VITE_API_URL || "https://battlix-backend.onrender.com";
 
   const [form, setForm] = useState({
     slug: "",

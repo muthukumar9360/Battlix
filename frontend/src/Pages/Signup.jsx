@@ -16,7 +16,7 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const API = import.meta.env.VITE_API_URL || "https://battlic-backend.onrender.com";
+  const API = import.meta.env.VITE_API_URL || "https://battlix-backend.onrender.com";
 
   const handleSignup = async (e) => {
     e.preventDefault();

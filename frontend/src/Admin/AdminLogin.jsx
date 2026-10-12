@@ -10,7 +10,7 @@ const AdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const API = import.meta.env.VITE_API_URL || "https://battlic-backend.onrender.com";
+  const API = import.meta.env.VITE_API_URL || "https://battlix-backend.onrender.com";
 
   const navigate = useNavigate();
 

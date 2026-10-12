@@ -51,7 +51,7 @@ const CreateRoom = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const API = import.meta.env.VITE_API_URL || "https://battlic-backend.onrender.com";
+  const API = import.meta.env.VITE_API_URL || "https://battlix-backend.onrender.com";
 
   const battleTypes = [
     { value: "1vs1", label: "1v1 DUEL", badge: "2 Players", description: "Head-to-head solo combat", defaultMax: 2 },

@@ -26,7 +26,7 @@ const ResultPage = () => {
   const [error, setError] = useState("");
   const [showReportModal, setShowReportModal] = useState(false);
 
-  const API = import.meta.env.VITE_API_URL || "https://battlic-backend.onrender.com";
+  const API = import.meta.env.VITE_API_URL || "https://battlix-backend.onrender.com";
   const currentUserId = localStorage.getItem("userId");
   const currentUsername = localStorage.getItem("username");
 

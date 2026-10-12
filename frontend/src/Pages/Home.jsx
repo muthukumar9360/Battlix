@@ -72,7 +72,7 @@ const Home = () => {
   };
 
   const user = localStorage.getItem("username");
-  const API = import.meta.env.VITE_API_URL || "https://battlic-backend.onrender.com";
+  const API = import.meta.env.VITE_API_URL || "https://battlix-backend.onrender.com";
   const socketRef = useRef(null);
 
   const [theme, setTheme] = useState(() => localStorage.getItem("battlix_theme") || "dark");

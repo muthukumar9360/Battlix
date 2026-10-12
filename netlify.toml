@@ -5,7 +5,7 @@
 
 [build.environment]
   NODE_VERSION = "20"
-  VITE_API_URL = "https://battlic-backend.onrender.com"
+  VITE_API_URL = "https://battlix-backend.onrender.com"
 
 [[redirects]]
   from = "/*"

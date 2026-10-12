@@ -7,7 +7,7 @@ const SubmissionHeatmap = ({ userId }) => {
   const [loading, setLoading] = useState(true);
   const [hoveredCell, setHoveredCell] = useState(null);
 
-  const API = import.meta.env.VITE_API_URL || "https://battlic-backend.onrender.com";
+  const API = import.meta.env.VITE_API_URL || "https://battlix-backend.onrender.com";
 
   useEffect(() => {
     const fetchActivity = async () => {
