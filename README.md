@@ -12,7 +12,7 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![Socket.IO](https://img.shields.io/badge/Socket.IO-Real--Time-010101?style=for-the-badge&logo=socket.io&logoColor=white)](https://socket.io/)
 
-[🌐 Live Web App](https://battlix.netlify.app) • [🔌 Live Backend API](https://battlix-backend.onrender.com) • [📖 Documentation](#table-of-contents)
+[🌐 Live Web App](https://battlix.netlify.app) • 
 
 </div>
 
@@ -30,7 +30,6 @@
   - [7. Global Leaderboards & Profile Analytics](#7-global-leaderboards--profile-analytics)
   - [8. Administrative Command Center](#8-administrative-command-center)
 - [Architecture & Tech Stack](#-architecture--tech-stack)
-- [Screenshots & UI Previews](#-screenshots--ui-previews)
 - [Project Directory Structure](#-project-directory-structure)
 - [Environment Variables](#-environment-variables)
 - [Getting Started Locally](#-getting-started-locally)
