@@ -122,20 +122,6 @@ graph TD
 
 ---
 
-## 📸 Screenshots & UI Previews
-
-| Arena Dashboard & 1v1 Queue | High-Performance Code Editor & Telemetry |
-| :---: | :---: |
-| *(Interactive Cyberpunk Arena Lobby)* | *(Split-Pane Editor with Live Testcase Outputs)* |
-
-| Real-Time Battle Results | Submission Activity Heatmap |
-| :---: | :---: |
-| *(Victory & Mission Telemetry Summary)* | *(Submission Heatmap & Elo Progress Tracker)* |
-
-> *(Place your custom screenshots inside `frontend/public/` or link your cloud-hosted images here)*
-
----
-
 ## 📁 Project Directory Structure
 
 ```plaintext
