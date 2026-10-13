@@ -12,7 +12,7 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![Socket.IO](https://img.shields.io/badge/Socket.IO-Real--Time-010101?style=for-the-badge&logo=socket.io&logoColor=white)](https://socket.io/)
 
-[🌐 Live Web App](https://battlix.netlify.app) • 
+[Go To Battlix](https://battlix.netlify.app) 
 
 </div>
 
