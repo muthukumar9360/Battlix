@@ -1,5 +1,5 @@
 /**
- * High-performance regex syntax highlighter for Code_Game:
+ * High-performance regex syntax highlighter for Battlix:
  * Highlights Data Types, Functions, Keywords, Strings, Numbers, Comments, and Built-ins.
  * Supported languages: python, javascript, cpp, java, c.
  */

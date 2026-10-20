@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: code-game-backend
+    name: battlix-backend
     env: node
     plan: free
     branch: deploy

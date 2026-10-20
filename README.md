@@ -34,7 +34,7 @@
 - [Environment Variables](#-environment-variables)
 - [Getting Started Locally](#-getting-started-locally)
 - [Controlled Production Deployment](#-controlled-production-deployment)
-- [Renaming Repository to Battlix](#-renaming-repository-to-battlix)
+- [Repository & Database Migration (`battlix`)](#-repository--database-migration-battlix)
 - [Contributing & License](#-contributing--license)
 
 ---
@@ -124,7 +124,7 @@ graph TD
 ## 📁 Project Directory Structure
 
 ```plaintext
-Code_Game/
+Battlix/
 ├── backend/
 │   ├── config/              # Database & environment configurations
 │   ├── controllers/         # Battle, contest, user, and problem controllers
@@ -146,10 +146,6 @@ Code_Game/
 │   ├── .env.production      # Production environment configuration
 │   ├── vite.config.js       # Vite build configuration
 │   └── package.json
-├── deploy.ps1               # Controlled deployment script (syncs to 'deploy' branch)
-├── deploy.bat               # Windows batch shortcut for deploy.ps1
-├── start-dev.ps1            # PowerShell launcher for local development servers
-├── start-dev.bat            # Windows batch launcher for local development servers
 ├── netlify.toml             # Netlify frontend build & redirect rules
 ├── render.yaml              # Render backend service specification
 └── package.json             # Root package manager & concurrently scripts
@@ -165,7 +161,7 @@ Create a `.env` file in the `backend/` directory:
 ```env
 PORT=5000
 NODE_ENV=development
-MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/Code_Game?retryWrites=true&w=majority
+MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/battlix?retryWrites=true&w=majority
 JWT_SECRET=your_jwt_secret_key_here
 JWT_SECRET_ADMIN=your_admin_secret_key_here
 ADMIN_USERNAME=admin_username
@@ -198,8 +194,8 @@ VITE_API_URL=https://battlix-backend.onrender.com
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/muthukumar9360/Code_Game.git
-   cd Code_Game
+   git clone https://github.com/muthukumar9360/Battlix.git
+   cd Battlix
    ```
 
 2. **Install root, backend, and frontend dependencies:**
@@ -257,31 +253,44 @@ The script automatically:
 
 ---
 
-## 🔄 Renaming Repository to Battlix
+## 🔄 Repository & Database Migration (Battlix)
 
-If you wish to rename the GitHub repository from `Code_Game` to `Battlix`:
+The platform is officially configured under its dedicated repository and isolated MongoDB database:
 
-1. **On GitHub:**
-   - Go to your repository on GitHub: `https://github.com/muthukumar9360/Code_Game`
-   - Click **Settings** (⚙️ tab).
-   - Under **Repository name**, change `Code_Game` to `Battlix` (or `battlix`).
-   - Click **Rename**.
+### 1. Official Git Repository
+The active GitHub repository is:
+```bash
+https://github.com/muthukumar9360/Battlix.git
+```
+To verify or link your local git remote:
+```bash
+git remote set-url origin https://github.com/muthukumar9360/Battlix.git
+git remote -v
+```
 
-2. **GitHub Automatic Redirects:**
-   - GitHub automatically maintains redirects for web links, clones, and pushes from `muthukumar9360/Code_Game` to `muthukumar9360/Battlix`.
+### 2. Database Migration (`Code_Game` ➔ `battlix`)
+All arena datasets, problem collections, user profiles, battle history, and submissions have been copied from the legacy `Code_Game` database to the dedicated **`battlix`** database on MongoDB Atlas:
+- **`problems`**: 107 problems copied with unique slug indexes preserved.
+- **`battles`**: Match history and telemetry copied.
+- **`users`**: Profiles, Elo ratings, and authentication hashes preserved.
+- **`admins`**: Administrator accounts and access privileges preserved.
+- **`submissions`**: All solution records and execution telemetry preserved.
 
-3. **Update Local Git Remote:**
-   Run this command in your local terminal:
-   ```bash
-   git remote set-url origin https://github.com/muthukumar9360/Battlix.git
-   ```
-   Verify with:
-   ```bash
-   git remote -v
-   ```
+Connection string format:
+```env
+MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/battlix?retryWrites=true&w=majority
+```
 
-4. **Netlify & Render:**
-   - Because Netlify and Render are connected via GitHub OAuth, they automatically update to the new repository name. Verify the repository link in your Netlify and Render project settings.
+A migration script is maintained in `backend/scripts/migrateToBattlix.js` for continuous database verification and synchronization.
+
+### 3. Production Environment Sync (Render & Netlify)
+- **Render Backend (`battlix-backend`)**:
+  - The `MONGO_URI` environment variable is set to target `/battlix` instead of `/Code_Game`.
+  - Service Name: `battlix-backend` (`https://battlix-backend.onrender.com`).
+  - `CLIENT_URL`: Configured to your active Netlify production URL for CORS origin validation.
+- **Netlify Frontend**:
+  - Build environment contains `VITE_API_URL = "https://battlix-backend.onrender.com"` targeting the production Render web service.
+  - Automatically builds and deploys static bundles on pushes to the `deploy` branch.
 
 ---
 
