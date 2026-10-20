@@ -3,6 +3,8 @@ services:
     name: code-game-backend
     env: node
     plan: free
+    branch: deploy
+    autoDeploy: true
     rootDir: backend
     buildCommand: npm install
     startCommand: npm start
